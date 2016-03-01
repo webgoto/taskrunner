@@ -1,0 +1,17 @@
+{
+  "name": "taskrunner",
+  "version": "1.0.0",
+  "description": "My original taskrunner.",
+  "scripts": {
+    "watch": "node task.js"
+  },
+  "main": "index.js",
+  "author": "am",
+  "license": "ISC",
+  "dependencies": {
+    "autoprefixer": "^6.3.3",
+    "browser-sync": "^2.11.1",
+    "less": "^2.6.0",
+    "node-sass": "^3.4.2"
+  }
+}
