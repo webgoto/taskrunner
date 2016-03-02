@@ -10,8 +10,11 @@
   "license": "ISC",
   "dependencies": {
     "autoprefixer": "^6.3.3",
+    "babel-core": "^6.6.0",
     "browser-sync": "^2.11.1",
+    "chokidar": "^1.4.3",
     "less": "^2.6.0",
-    "node-sass": "^3.4.2"
+    "node-sass": "^3.4.2",
+    "webpack": "^1.12.14"
   }
 }
