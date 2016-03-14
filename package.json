@@ -1,20 +1,19 @@
 {
   "name": "taskrunner",
   "version": "1.0.0",
-  "description": "My original taskrunner.",
-  "scripts": {
-    "watch": "node task.js"
-  },
+  "description": "Original node.js taskrunner for myself.",
   "main": "index.js",
   "author": "am",
   "license": "ISC",
   "dependencies": {
     "autoprefixer": "^6.3.3",
-    "babel-core": "^6.6.0",
+    "babel-core": "^6.6.4",
     "browser-sync": "^2.11.1",
-    "chokidar": "^1.4.3",
+    "css-mqpacker": "^4.0.0",
     "less": "^2.6.0",
+    "node-notifier": "^4.5.0",
     "node-sass": "^3.4.2",
+    "sync-files": "^1.0.3",
     "webpack": "^1.12.14"
   }
 }

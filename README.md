@@ -15,3 +15,5 @@ Original node.js taskrunner for myself.
 ###start 起動
 `$ node taskrunner.js`
 
+###note 備考
+* NODE_PATHにグローバルのnode_moduleフォルダを設定する

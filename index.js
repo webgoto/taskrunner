@@ -2,6 +2,7 @@
 
 const fs   = require('fs');
 const path = require('path');
+const anymatch = require('anymatch');
 
 const projectDirPath = path.normalize(path.dirname(process.argv[1]));
 
@@ -25,13 +26,44 @@ const message = function(message, color){
 	console.log('['+magenta+'TR'+reset+'] '+color+message+reset);
 };
 
-const watch = function(paths, ignored){
+
+/**
+ * ファイルを監視
+ */
+const watcher = function(paths, ignored, callback){
+	message('Watch Start...', 'blue');
 	if(!paths) paths = ['.']; //現在のフォルダを起点
-	if(!ignored) ignored = [/[\/\\]\./, /^\.[^\/\\]/,/(node_modules|vender)/]; //.で始まるファイルとフォルダを除外
+	if(!ignored) ignored = [/[\/\\]\./, /^\.[^\/\\]/,/(node_modules|vender)/]; //.で始まるファイルとフォルダなどを除外
 	const chokidar = require('chokidar');
 	const watcher = chokidar.watch(paths, {ignored: ignored});
-	message('Watch Start', 'blue');
-	return watcher;
+	watcher.on('change', (watchFilePath) => {
+		try{
+			callback(watchFilePath);
+		}catch(e){
+			const notifier = require('node-notifier');
+			notifier.notify({
+				title: 'TaskRunner',
+				message: 'エラーが起きました。',
+				sound: false,
+				time: 5000,
+				wait: false
+			}, function (err, response) {
+			});
+			message(e.toString(), 'red');
+		}
+	});
+};
+
+/**
+ * フォルダを同期
+ */
+const syncFiles = function(source, target, opts){
+	message('Sync:'+source+' to '+target, 'green');
+	require('sync-files')(source, target, opts, function(e, file){
+		if(e==='error'){
+			message(e+':'+file, 'red');
+		}
+	});
 };
 
 /**
@@ -40,6 +72,7 @@ const watch = function(paths, ignored){
  */
 const build = class {
 	constructor(watchFilePath) {
+		this.watchFilePath = watchFilePath;
 		this.targetFilePath = projectDirPath+'\\'+watchFilePath;
 		this.targetDirPath = path.dirname(this.targetFilePath)+'\\';
 		this.targetFileName_Ext = path.basename(this.targetFilePath);
@@ -91,12 +124,27 @@ const build = class {
 		const self = this;
 		const autoprefixer = require('autoprefixer');
 		const postcss      = require('postcss');
-		postcss([autoprefixer({browsers:['last 3 versions','ie >= 9','iOS >= 6','Android >= 3']})]).process(self.code, {from: self.targetFileName_Ext, map:{prev:self.map}}).then(function (result) {
+		postcss([
+			autoprefixer({browsers:['last 3 versions','ie >= 9','iOS >= 6','Android >= 3']})
+		]).process(self.code, {from: self.targetFileName_Ext, map:{prev:self.map}}).then(function (result) {
 			result.warnings().forEach(function (warn) {
 				message(warn.toString(), 'red');
 			});
 			self.code = result.css;
 			self.runWrite('css');
+		});
+	}
+
+	/**
+	 * riot実行
+	 * xxx.tagを読み込みxxx.jsを作成
+	 */
+	runRiot(){
+		const self = this;
+		const riot = require('riot');
+		fs.readFile(self.targetFilePath, 'utf8', function (err, tag) {
+			self.code = riot.compile(tag);
+			self.runWrite('js');
 		});
 	}
 
@@ -107,8 +155,9 @@ const build = class {
 	runBable(){
 		const babel = require('babel-core');
 		const result = babel.transformFileSync(this.targetFilePath, {
+//			sourceMaps: 'inline',
 			compact: true,
-			sourceMaps: 'inline'
+			comments: false
 		});
 		this.code = result.code;
 		this.runWrite('js');
@@ -147,7 +196,9 @@ const build = class {
 			}
 			if(!isFileExist){
 				message(this.targetFileName+'.'+ext+' is NotFound.', 'red');
-				return;
+				NotFound
+//				throw new Error(this.targetFileName+'.'+ext+' is NotFound.');
+//				return;
 			}
 		}
 		fs.writeFile(this.targetDirPath+this.targetFileName+'.'+ext, this.code);
@@ -155,17 +206,17 @@ const build = class {
 	}
 
 	/**
-	 * 拡張子が一致するか調べる
-	 * スペース区切りの文字列で指定
+	 * ファイルが当てはまるか調べる
 	 */
-	checkExt(exts){
-		return exts.split(' ').indexOf(this.targetFileExt)>=0;
+	match(matchers){
+		return anymatch(matchers, this.watchFilePath);
 	}
 };
 
 module.exports = {
 	build: build,
-	watch: watch,
+	watcher: watcher,
 	message: message,
+	syncFiles: syncFiles,
 	browserSync: require("browser-sync")
 };
