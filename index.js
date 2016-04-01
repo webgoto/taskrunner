@@ -125,7 +125,7 @@ const build = class {
 		const autoprefixer = require('autoprefixer');
 		const postcss      = require('postcss');
 		postcss([
-			autoprefixer({browsers:['last 3 versions','ie >= 9','iOS >= 6','Android >= 3']})
+			autoprefixer({browsers:['last 3 versions','ie >= 9','iOS >= 7','Android >= 4.1']})
 		]).process(self.code, {from: self.targetFileName_Ext, map:{prev:self.map}}).then(function (result) {
 			result.warnings().forEach(function (warn) {
 				message(warn.toString(), 'red');
