@@ -26,6 +26,16 @@ const message = function(message, color){
 	console.log('['+magenta+'TR'+reset+'] '+color+message+reset);
 };
 
+const extend = function(object1, object2){
+	if(object2!=null){
+		for(var key in object2){
+			if(object2.hasOwnProperty(key)){
+				object1[key] = object2[key];
+			}
+		}
+	}
+	return object1;
+};
 
 /**
  * ファイルを監視
@@ -83,35 +93,68 @@ const build = class {
 	}
 
 	/**
+	 * stylus実行
+	 * 指定ファイルを読み込み、this.codeを上書き
+	 */
+	runStylus(opt){
+		const self = this;
+		opt = extend({
+			minify: true,
+			sourceMap: true,
+		}, opt);
+		const stylus = require('stylus');
+		var css = fs.readFileSync(self.targetFilePath, 'utf8');
+		stylus(css)
+			.set('filename', self.targetFilePath)
+			.set('sourcemap', opt.sourceMap?{inline:true}:false)
+			.render(function(err, css){
+				if (err) throw err;
+				self.code = css;
+				self.map = stylus.sourcemap;
+				self.runAutoprefixer(opt);
+			});
+	}
+
+	/**
 	 * sass実行
 	 * 指定ファイルを読み込み、this.codeを上書き
 	 */
-	runSass(){
+	runSass(opt){
+		const self = this;
+		opt = extend({
+			minify: true,
+			sourceMap: true,
+		}, opt);
 		const sass = require('node-sass');
 		var result = sass.renderSync({
-	//	data: code,
+		// data: code,
 		file: this.targetFilePath,
-		outFile: './',
-		outputStyle: 'compressed',
+		outFile: self.targetFileName_Ext,
+		outputStyle: opt.minify ? 'compressed' : 'nested',
 		sourceMap: true,
-		sourceMapEmbed: true
+		// sourceMapEmbed: true
 		});
-		this.code = result.css.toString();
-		this.map = result.map.toString();
-		this.runAutoprefixer();
+		self.code = result.css.toString();
+		self.map = result.map.toString();
+		self.runAutoprefixer(opt);
 	}
 
 	/**
 	 * less実行
 	 * 指定ファイルを読み込み、this.codeを上書き
 	 */
-	runLess(){
+	runLess(opt){
 		const self = this;
+		opt = extend({
+			minify: true,
+			sourceMap: true,
+		}, opt);
 		fs.readFile(self.targetFilePath, 'utf8', function (err, css) {
 			const less = require('less');
-			less.render(css, {sourceMap: {sourceMapFileInline: true}, filename: self.targetFileName_Ext, compress: true}).then( function (output) {
+			less.render(css, {sourceMap: {}, filename: self.targetFileName_Ext, compress: opt.minify}).then( function (output) {
 				self.code = output.css;
-				self.runAutoprefixer();
+				self.map  = output.map;
+				self.runAutoprefixer(opt);
 			});
 		});
 	}
@@ -120,18 +163,27 @@ const build = class {
 	 * autoprefixer実行
 	 * this.cssにプレフィックを付けてthis.codeを上書き
 	 */
-	runAutoprefixer(){
+	runAutoprefixer(opt, unWrite){
 		const self = this;
+		opt = extend({
+			minify: true,
+			sourceMap: true,
+		}, opt);
 		const autoprefixer = require('autoprefixer');
+		const mqpacker = require('css-mqpacker');
 		const postcss      = require('postcss');
 		postcss([
-			autoprefixer({browsers:['last 3 versions','ie >= 9','iOS >= 7','Android >= 4.1']})
-		]).process(self.code, {from: self.targetFileName_Ext, map:{prev:self.map}}).then(function (result) {
+			autoprefixer({browsers:['last 3 versions','ie >= 9','iOS >= 7','Android >= 4.1']}),
+			mqpacker
+		]).process(self.code, {from: self.targetFileName_Ext, map: opt.sourceMap ? {prev:self.map, inline: true} : null}).then(function (result) {
+//		]).process(self.code, {from: self.targetFileName_Ext, map: { inline: false }}).then(function (result) {
 			result.warnings().forEach(function (warn) {
 				message(warn.toString(), 'red');
 			});
 			self.code = result.css;
-			self.runWrite('css');
+			if(unWrite!==true){
+				self.runWrite('css');
+			}
 		});
 	}
 
@@ -142,6 +194,13 @@ const build = class {
 	runRiot(){
 		const self = this;
 		const riot = require('riot');
+		riot.parsers.css.sass = function(tagName, css) {  
+			const sass = require('node-sass');
+		  const result = sass.renderSync({
+		    data: css
+		  });
+		  return result.css.toString();
+		};
 		fs.readFile(self.targetFilePath, 'utf8', function (err, tag) {
 			self.code = riot.compile(tag);
 			self.runWrite('js');
