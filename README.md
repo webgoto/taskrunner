@@ -1,5 +1,5 @@
 #taskrunner
-Original node.js taskrunner for myself.
+グローバル環境にインストールして使うタスクランナー
 
 ##usage 使い方
 
