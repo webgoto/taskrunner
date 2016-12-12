@@ -1,6 +1,6 @@
 {
   "name": "taskrunner",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Original node.js taskrunner for myself.",
   "main": "index.js",
   "author": "webgoto",
@@ -13,7 +13,7 @@
     "less": "^2.7.1",
     "node-notifier": "^4.6.1",
     "node-sass": "^4.0.0",
-    "riot": "^3.0.0",
+    "riot": "^3.0.2",
     "stylus": "^0.54.5",
     "sync-files": "^1.0.3",
     "webpack": "^1.14.0"
