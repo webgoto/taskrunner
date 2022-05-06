@@ -1,21 +1,21 @@
 {
   "name": "taskrunner",
-  "version": "1.1.1",
+  "version": "2.2.1",
   "description": "Original node.js taskrunner for myself.",
   "main": "index.js",
   "author": "webgoto",
   "license": "MIT",
-  "dependencies": {
-    "autoprefixer": "^6.5.3",
-    "babel-core": "^6.20.0",
-    "browser-sync": "^2.18.5",
-    "css-mqpacker": "^5.0.1",
-    "less": "^2.7.1",
-    "node-notifier": "^4.6.1",
-    "node-sass": "^4.0.0",
-    "riot": "^3.0.2",
-    "stylus": "^0.54.5",
-    "sync-files": "^1.0.3",
-    "webpack": "^1.14.0"
+  "private": true,
+  "optionalDependencies": {
+    "autoprefixer": "^10.4.2",
+    "postcss": "^8.4.8",
+    "browser-sync": "^2.27.8",
+    "css-mqpacker": "^7.0.0",
+    "less": "^4.1.2",
+    "node-notifier": "^10.0.1",
+    "sass": "^1.49.9",
+    "riot": "^3.13.2",
+    "stylus": "^0.56.0",
+    "sync-files": "^1.0.3"
   }
 }

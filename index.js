@@ -45,7 +45,7 @@ const watcher = function(paths, ignored, callback){
 	if(!paths) paths = ['.']; //現在のフォルダを起点
 	if(!ignored) ignored = [/[\/\\]\./, /^\.[^\/\\]/,/(node_modules|vender)/]; //.で始まるファイルとフォルダなどを除外
 	const chokidar = require('chokidar');
-	const watcher = chokidar.watch(paths, {ignored: ignored});
+	const watcher = chokidar.watch(paths, {ignored: ignored, awaitWriteFinish: {stabilityThreshold: 300}});
 	watcher.on('change', (watchFilePath) => {
 		try{
 			callback(watchFilePath);
@@ -57,8 +57,7 @@ const watcher = function(paths, ignored, callback){
 				sound: false,
 				time: 5000,
 				wait: false
-			}, function (err, response) {
-			});
+			}, function(err, response){});
 			message(e.toString(), 'red');
 		}
 	});
@@ -125,7 +124,8 @@ const build = class {
 			minify: true,
 			sourceMap: true,
 		}, opt);
-		const sass = require('node-sass');
+		// const sass = require('node-sass');
+		const sass = require('sass');//dart-sassを使う
 		var result = sass.renderSync({
 		// data: code,
 		file: this.targetFilePath,
@@ -153,7 +153,7 @@ const build = class {
 			const less = require('less');
 			less.render(css, {sourceMap: {}, filename: self.targetFileName_Ext, compress: opt.minify}).then( function (output) {
 				self.code = output.css;
-				self.map  = output.map;
+				self.map = output.map;
 				self.runAutoprefixer(opt);
 			});
 		});
@@ -171,9 +171,9 @@ const build = class {
 		}, opt);
 		const autoprefixer = require('autoprefixer');
 		const mqpacker = require('css-mqpacker');
-		const postcss      = require('postcss');
+		const postcss = require('postcss');
 		postcss([
-			autoprefixer({browsers:['last 3 versions','ie >= 9','iOS >= 7','Android >= 4.1']}),
+			autoprefixer({overrideBrowserslist :['last 3 versions','ie >= 9','iOS >= 7','Android >= 4.1'], grid: 'autoplace'}),
 			mqpacker
 		]).process(self.code, {from: self.targetFileName_Ext, map: opt.sourceMap ? {prev:self.map, inline: true} : null}).then(function (result) {
 //		]).process(self.code, {from: self.targetFileName_Ext, map: { inline: false }}).then(function (result) {
@@ -260,8 +260,14 @@ const build = class {
 //				return;
 			}
 		}
-		fs.writeFile(this.targetDirPath+this.targetFileName+'.'+ext, this.code);
-		message('Build: '+this.targetFileName+'.'+ext, 'green');
+		var obj = this;
+		fs.writeFile(this.targetDirPath+this.targetFileName+'.'+ext, this.code, function(err){
+			if(err){
+				throw err;
+			}else{
+				message('Build: '+obj.targetFileName+'.'+ext, 'green');
+			}
+		});
 	}
 
 	/**
